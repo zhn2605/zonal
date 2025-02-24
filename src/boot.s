@@ -1,9 +1,7 @@
-.bits 32
-
 // Setting constants
 .set ALIGN,     1<<0
 .set MEMINFO,   1<<1
-.set FLAGS,     ALIGH | MEMINFO
+.set FLAGS,     ALIGN | MEMINFO
 .set MAGIC,     0x1BADB002
 .set CHECKSUM, -(MAGIC + FLAGS)
 
@@ -20,17 +18,15 @@
 // create stack from bottom up
 stack_bottom:
 .skip 16384
-stack top:
+stack_top:
 
 .section .text
 .global start
 .type start, @function
 
-// Main from kernel
-extern main
 start:
     mov $stack_top, %esp
-    call kernel_main
+    call main
 
     // stop interrupts
     cli
