@@ -17,10 +17,10 @@ void init_terminal() {
     mem = (char*) MEM_PTR;
 }
 
-void put_char(char c, size_t y, size_t x) {
-    row = y % ROWS, col = x % COLS;
-    size_t idx = row * ROWS + col;
+void put_char(char c, size_t y, size_t x, uint8_t bg, uint8_t fg) {
+    size_t idx = (y * COLS + x) * 2;
     mem[idx] = c;
+    mem[idx + 1] = bg | fg;
 }
 
 size_t len(char* str) {
@@ -31,9 +31,9 @@ size_t len(char* str) {
     return index;
 }
 
-void print_at(char* str, size_t y, size_t x) {
-    for (int i = 0; i < len(str); i++) {
-        put_char(str[i], y, x);
+void print_at(char* str, size_t y, size_t x, uint8_t bg, uint8_t fg) {
+    for (size_t i = 0; i < len(str); i++) {
+        put_char(str[i], y, x + i, bg, fg);
     }
 }
 
@@ -47,7 +47,7 @@ int main() {
         }
     }
     char* str = "ZONAL";
-    print_at(str, ROWS/2, COLS/2 - len(str)/2);
+    print_at(str, ROWS/2, COLS/2 - len(str)/2, 0xA0, 0x0F);
     
     return 0;
 }

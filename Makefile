@@ -1,38 +1,73 @@
-BOOT=src/boot.s
-KERNEL=src/kernel.c
-ISOFILE=build/zonal.iso
-KERNEL_BIN=build/zonal.bin
-LINKER=boot/linker.ld
-
+#
+# Compiler & Tools
+#
 CC=i686-elf-gcc
+LD=i686-elf-gcc
 AS=i686-elf-as
-LD=i686-elf-ld
 OBJCOPY=i686-elf-objcopy
-CFLAGS=-ffreestanding -m32 -nostdlib -lgcc
-ASFLAGS=
-LDFLAGS=-T $(LINKER) --oformat=elf32-i386
 
-DEBUG_FLAGS=-g
+#
+# Directories
+#
+SRCDIR=src
+BUILDDIR=build
+INCLUDEDIR=include
+ISODIR=isodir
 
-all: build
+#
+# Flags
+#
+CFLAGS=-std=gnu99 -ffreestanding -O2 -Wall -Wextra -I$(INCLUDEDIR)
+LDFLAGS=-T boot/linker.ld -ffreestanding -O2 -nostdlib -lgcc
 
-build: clean
-	mkdir -p build
-	$(AS) $(ASFLAGS) $(BOOT) -o build/boot.o
-	$(CC) $(CFLAGS) $(DEBUG_FLAGS) -c $(KERNEL) -o build/kernel.o
-	$(LD) $(LDFLAGS) $(DEBUG_FLAGS) -o build/kernel.elf build/boot.o build/kernel.o
-	$(OBJCOPY) -O binary build/kernel.elf $(KERNEL_BIN)
-	rm -rf iso
-	mkdir -p iso/boot/grub
-	cp $(KERNEL_BIN) iso/boot/zonal.bin
-	cp boot/grub.cfg iso/boot/grub/grub.cfg
-	grub-mkrescue -o $(ISOFILE) iso
+#
+# Files
+#
+SOURCES=$(SRCDIR)/kernel.c $(SRCDIR)/boot.s
+OBJECTS=$(BUILDDIR)/kernel.o $(BUILDDIR)/boot.o
+TARGET=$(BUILDDIR)/zonal.bin
+ISO_TARGET=zonal.iso
 
-run: build
-	qemu-system-i386 -cdrom $(ISOFILE)
+#
+# Default target
+#
+all: $(TARGET)
 
-debug: build
-	qemu-system-i386 -cdrom $(ISOFILE) -s -S
+#
+# Compile C files
+#
+$(BUILDDIR)/kernel.o: $(SRCDIR)/kernel.c
+	mkdir -p $(BUILDDIR)
+	$(CC) $(CFLAGS) -c $< -o $@
 
+#
+# Compile assembly files
+#
+$(BUILDDIR)/boot.o: $(SRCDIR)/boot.s
+	mkdir -p $(BUILDDIR)
+	$(AS) -c $< -o $@
+
+#
+# Link
+#
+$(TARGET): $(OBJECTS)
+	$(LD) $(LDFLAGS) -o $@ $(OBJECTS)
+
+#
+# Create ISO
+#
+$(ISO_TARGET): $(TARGET)
+	mkdir -p $(ISODIR)/boot/grub
+	cp $(TARGET) $(ISODIR)/boot/zonal.bin
+	cp boot/grub.cfg $(ISODIR)/boot/grub/grub.cfg
+	grub-mkrescue -o $(ISO_TARGET) $(ISODIR)
+#
+# Run in QEMU
+#
+run: $(ISO_TARGET)
+	qemu-system-i386 -cdrom $(ISO_TARGET)
+#
+# Clean up compiled files
+#
 clean:
-	rm -rf build iso
+	rm -rf $(BUILDDIR) $(ISO_TARGET) $(ISODIR)/boot/zonal.bin
