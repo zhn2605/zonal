@@ -47,7 +47,7 @@ int main() {
         }
     }
     char* str = "ZONAL";
-    print_at(str, ROWS/2, COLS/2 - len(str)/2, 0xA0, 0x0F);
+    print_at(str, ROWS/2, COLS/2 - len(str)/2, 0x00, 0x0F);
     
     return 0;
 }
